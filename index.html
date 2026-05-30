@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <title>My Google AI Studio App</title>
+    <script>
+      (function() {
+        try {
+          var localFetch = window.fetch;
+          
+          // Helper to define property safely
+          function defineSafeFetch(obj) {
+            try {
+              Object.defineProperty(obj, 'fetch', {
+                get: function() {
+                  return localFetch;
+                },
+                set: function(val) {
+                  localFetch = val;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (e) {
+              // Ignore individual target failures
+            }
+          }
+
+          // Apply to all potential global context targets
+          defineSafeFetch(window);
+          if (typeof Window !== 'undefined' && Window.prototype) {
+            defineSafeFetch(Window.prototype);
+          }
+          if (typeof globalThis !== 'undefined') {
+            defineSafeFetch(globalThis);
+          }
+          if (typeof self !== 'undefined') {
+            defineSafeFetch(self);
+          }
+        } catch (globalError) {
+          console.warn("Global fetch patching encountered an issue:", globalError);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

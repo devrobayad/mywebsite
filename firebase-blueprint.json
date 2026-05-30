@@ -1,0 +1,224 @@
+{
+  "entities": {
+    "Hero": {
+      "title": "Hero Section",
+      "description": "Welcome and tagline settings for the top hero component",
+      "type": "object",
+      "properties": {
+        "heading": { "type": "string" },
+        "typewriterTexts": {
+          "type": "array",
+          "description": "Rotating titles shown by the typewriter effect"
+        }
+      },
+      "required": ["heading", "typewriterTexts"]
+    },
+    "About": {
+      "title": "About Portfolio",
+      "description": "About me page content, biography, styling, and frame designs",
+      "type": "object",
+      "properties": {
+        "bio": { "type": "string" },
+        "highlightCards": {
+          "type": "array",
+          "description": "Summary feature cards for main expertise"
+        },
+        "bioPhotoFrame": { "type": "string", "enum": ["none", "circle-premium", "neon-glow", "sleek-card"] },
+        "bioPhotoBorderRadius": { "type": "string" },
+        "bioPhotoFullWidth": { "type": "boolean" },
+        "aboutMeEyebrow": { "type": "string" },
+        "aboutMeTitle": { "type": "string" },
+        "expertiseSubtitle": { "type": "string" },
+        "methodologyTitle": { "type": "string" }
+      },
+      "required": ["bio", "highlightCards"]
+    },
+    "Skill": {
+      "title": "Skill Entity",
+      "description": "A single programming or professional capability to showcase",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "icon"]
+    },
+    "Project": {
+      "title": "Project Showcase",
+      "description": "A client work or personal project detail with links and tags",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "techTags": { "type": "array" },
+        "thumbnail": { "type": "string" },
+        "liveUrl": { "type": "string" },
+        "githubUrl": { "type": "string" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "title", "desc", "techTags"]
+    },
+    "SocialLinks": {
+      "title": "Social Identifiers",
+      "description": "Links and contact details of the developer profile",
+      "type": "object",
+      "properties": {
+        "github": { "type": "string" },
+        "linkedin": { "type": "string" },
+        "facebook": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "customChannels": { "type": "array" },
+        "contactItems": { "type": "array" }
+      },
+      "required": ["email", "phone"]
+    },
+    "Footer": {
+      "title": "Footer Settings",
+      "description": "The design configuration of the footer component and menu items",
+      "type": "object",
+      "properties": {
+        "logoText": { "type": "string" },
+        "copyrightText": { "type": "string" },
+        "developerText": { "type": "string" },
+        "developerUrlLabel": { "type": "string" },
+        "developerUrl": { "type": "string" },
+        "headerLogoImg": { "type": "string" },
+        "footerLogoImg": { "type": "string" },
+        "siteTitle": { "type": "string" },
+        "siteFavicon": { "type": "string" },
+        "customLinks": { "type": "array" },
+        "cursorStyle": { "type": "string" }
+      },
+      "required": ["logoText", "copyrightText", "developerText", "developerUrlLabel", "developerUrl"]
+    },
+    "Counter": {
+      "title": "Counter Statistics",
+      "description": "Statistic values and counts shown on the home page dashboard",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "value": { "type": "string" },
+        "label": { "type": "string" }
+      },
+      "required": ["id", "value", "label"]
+    },
+    "Pricing": {
+      "title": "Pricing Configuration",
+      "description": "Structure of pricing tables and FAQs on the portfolio page",
+      "type": "object",
+      "properties": {
+        "plans": { "type": "array" },
+        "annualEnabled": { "type": "boolean" },
+        "faq": { "type": "array" }
+      },
+      "required": ["plans"]
+    },
+    "Service": {
+      "title": "Service Offer",
+      "description": "One service item showing professional assistance packages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "icon": { "type": "string" },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "features": { "type": "array" }
+      },
+      "required": ["id", "title", "desc"]
+    },
+    "Availability": {
+      "title": "Availability Windows",
+      "description": "Parameters outlining open booking spots and limits",
+      "type": "object",
+      "properties": {
+        "weeklySchedule": { "type": "object" },
+        "slotDuration": { "type": "number" },
+        "bufferTime": { "type": "number" },
+        "blockedDates": { "type": "array" },
+        "services": { "type": "array" },
+        "maxBookingsPerDay": { "type": "number" },
+        "customSlots": { "type": "object" }
+      },
+      "required": ["weeklySchedule", "slotDuration", "maxBookingsPerDay"]
+    },
+    "EmailConfig": {
+      "title": "Email Settings",
+      "description": "SMTP configurations for automated response notifications",
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string" },
+        "smtpHost": { "type": "string" },
+        "smtpPort": { "type": "number" },
+        "smtpUser": { "type": "string" },
+        "smtpPass": { "type": "string" },
+        "senderEmail": { "type": "string" },
+        "notificationEmail": { "type": "string" }
+      }
+    },
+    "ContactMessage": {
+      "title": "Contact Message Log",
+      "description": "A communication message sent by website visitors",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "date": { "type": "string" },
+        "read": { "type": "boolean" },
+        "replies": { "type": "array" }
+      },
+      "required": ["id", "name", "email", "message"]
+    },
+    "Booking": {
+      "title": "Booking Appointment",
+      "description": "A scheduled consulting call booking from clients",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "service": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "meetingType": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["Confirmed", "Cancelled", "Rescheduled", "Pending"] },
+        "replies": { "type": "array" }
+      },
+      "required": ["id", "name", "email", "service", "date", "time"]
+    },
+    "AdminCredentials": {
+      "title": "Admin Credentials",
+      "description": "Security authentication parameters for the admin dashboard",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "passwordHash": { "type": "string" }
+      },
+      "required": ["username", "passwordHash"]
+    }
+  },
+  "firestore": {
+    "/settings/hero": { "schema": "Hero", "description": "Hero parameters" },
+    "/settings/about": { "schema": "About", "description": "About me profile details" },
+    "/settings/social": { "schema": "SocialLinks", "description": "Contact info and channels" },
+    "/settings/footer": { "schema": "Footer", "description": "Footer and site branding" },
+    "/settings/pricing": { "schema": "Pricing", "description": "Membership tiers and questions" },
+    "/settings/availability": { "schema": "Availability", "description": "Scheduler time preferences" },
+    "/settings/email": { "schema": "EmailConfig", "description": "SMTP and notice settings" },
+    "/settings/admin": { "schema": "AdminCredentials", "description": "Dashboard user settings" },
+    "/skills/{skillId}": { "schema": "Skill", "description": "List of professional developer skillset" },
+    "/projects/{projectId}": { "schema": "Project", "description": "List of showcase research projects" },
+    "/counters/{counterId}": { "schema": "Counter", "description": "Core tracker numbers" },
+    "/services/{serviceId}": { "schema": "Service", "description": "List of consultancy items" },
+    "/messages/{messageId}": { "schema": "ContactMessage", "description": "Stored user contact records" },
+    "/bookings/{bookingId}": { "schema": "Booking", "description": "Stored scheduler calls" }
+  }
+}

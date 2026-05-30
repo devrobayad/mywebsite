@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default rule: lock everything down
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global configurations (Hero, About, Social, Footer, Pricing, Availability, Email Settings)
+    match /settings/{docName} {
+      allow read: if true;
+      allow write: if true; 
+    }
+
+    // Portfolio list items (Skills, Projects, Counters, Services)
+    match /skills/{skillId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /projects/{projectId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /counters/{counterId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Interactive custom inputs (Contact messages & Calendar Bookings)
+    match /messages/{messageId} {
+      allow read, write: if true;
+    }
+
+    match /bookings/{bookingId} {
+      allow read, write: if true;
+    }
+
+    // Backup Admin collections
+    match /admins/{adminId} {
+      allow read, write: if true;
+    }
+  }
+}

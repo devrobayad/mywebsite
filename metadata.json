@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: Remix: Robayad Hasan Jam Portfolio",
+  "description": "Full-stack personal portfolio website with a comprehensive admin panel, interactive pricing plans, and a custom meeting booking system.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
