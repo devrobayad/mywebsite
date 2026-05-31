@@ -99,6 +99,10 @@ export interface FooterData {
   siteFavicon?: string;
   customLinks?: FooterCustomLink[];
   cursorStyle?: 'system' | 'neon' | 'magnetic' | 'retro';
+  preloaderEnabled?: boolean;
+  preloaderType?: 'cyber-core' | 'quantum-pulse' | 'hacker-terminal' | 'neon-shimmer' | 'custom-logo-spin';
+  preloaderLogoUrl?: string;
+  preloaderDuration?: number;
 }
 
 export interface ContactMessage {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Calendar, Clock, Laptop, Compass, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { SocialLinks, Booking } from '../types';
 import IconRenderer from './IconRenderer';
+import { ClientDB } from '../lib/db';
 
 interface ContactTabProps {
   social: SocialLinks | null;
@@ -44,26 +45,23 @@ export default function ContactTab({
 
   // Load fallback/initial availability structure to read services list
   useEffect(() => {
-    fetch('/api/availability?date=' + todayStr)
-      .then(res => res.json())
-      .then(data => {
-        if (data.services) {
-          setServices(data.services);
-          if (!bService && data.services.length > 0) {
-            setBService(data.services[0]);
-          }
+    ClientDB.getAvailability().then(settings => {
+      if (settings && settings.services) {
+        setServices(settings.services);
+        if (!bService && settings.services.length > 0) {
+          setBService(preSelectedService || settings.services[0]);
         }
-      })
-      .catch(() => {
-        const fallbacks = [
-          "Full-Stack Web Dev Consultation",
-          "AI Agent & LLM Workflow Integration",
-          "Codebase Review & Optimization",
-          "General Tech Assessment Consultation"
-        ];
-        setServices(fallbacks);
-        if (!bService) setBService(fallbacks[0]);
-      });
+      }
+    }).catch(() => {
+      const fallbacks = [
+        "Full-Stack Web Dev Consultation",
+        "AI Agent & LLM Workflow Integration",
+        "Codebase Review & Optimization",
+        "General Tech Assessment Consultation"
+      ];
+      setServices(fallbacks);
+      if (!bService) setBService(fallbacks[0]);
+    });
   }, []);
 
   // Update dropdown selection if parent changes preSelectedService
@@ -85,8 +83,7 @@ export default function ContactTab({
     setDayClosedReason(null);
     setBTime('');
 
-    fetch(`/api/availability?date=${bDate}`)
-      .then(res => res.json())
+    ClientDB.getSlotsForDate(bDate)
       .then(data => {
         setSlotsLoading(false);
         if (data.dayActive) {
@@ -117,32 +114,22 @@ export default function ContactTab({
     setMsgFeedback(null);
 
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: msgName,
-          email: msgEmail,
-          subject: msgSubject,
-          message: msgBody
-        })
+      await ClientDB.addMessage({
+        name: msgName,
+        email: msgEmail,
+        subject: msgSubject,
+        message: msgBody
       });
 
-      const data = await res.json();
       setMsgSending(false);
-
-      if (res.ok) {
-        setMsgFeedback({ status: 'success', text: `Message sent! Thank you ${msgName}. I will correspond shortly.` });
-        setMsgName('');
-        setMsgEmail('');
-        setMsgSubject('');
-        setMsgBody('');
-      } else {
-        setMsgFeedback({ status: 'err', text: data.error || 'Failed to dispatch communication request.' });
-      }
+      setMsgFeedback({ status: 'success', text: `Message sent! Thank you ${msgName}. I will correspond shortly.` });
+      setMsgName('');
+      setMsgEmail('');
+      setMsgSubject('');
+      setMsgBody('');
     } catch {
       setMsgSending(false);
-      setMsgFeedback({ status: 'err', text: 'Network connection failure. Try again shortly.' });
+      setMsgFeedback({ status: 'err', text: 'Connection failure. Try again shortly.' });
     }
   };
 
@@ -159,38 +146,27 @@ export default function ContactTab({
     setBookingSending(true);
 
     try {
-      const res = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: bName,
-          email: bEmail,
-          service: bService,
-          date: bDate,
-          time: bTime,
-          meetingType: bType,
-          notes: bNotes
-        })
+      const bObj = await ClientDB.addBooking({
+        name: bName,
+        email: bEmail,
+        service: bService,
+        date: bDate,
+        time: bTime,
+        meetingType: bType,
+        notes: bNotes
       });
 
-      const data = await res.json();
       setBookingSending(false);
+      onBookingSuccess(bObj);
 
-      if (res.ok && data.success) {
-        // Clear components
-        setBName('');
-        setBEmail('');
-        setBDate('');
-        setBTime('');
-        setBNotes('');
-        // Trigger page confirmed screen
-        onBookingSuccess(data.data);
-      } else {
-        setBookingErr(data.error || 'Double-check inputs. This time slot is booked.');
-      }
-    } catch {
+      setBName('');
+      setBEmail('');
+      setBDate('');
+      setBTime('');
+      setBNotes('');
+    } catch (err: any) {
       setBookingSending(false);
-      setBookingErr('Network connection failure. Review fields.');
+      setBookingErr(err?.message || 'Failure deploying booking request.');
     }
   };
 

@@ -13,9 +13,11 @@ import AdminPanel from './components/AdminPanel';
 import AllProjectsPage from './components/AllProjectsPage';
 import AllServicesPage from './components/AllServicesPage';
 import CustomCursor from './components/CustomCursor';
+import Preloader from './components/Preloader';
 import { HeroData, AboutData, Skill, Project, SocialLinks, FooterData, PricingState, Booking, ServiceItem, CounterItem } from './types';
 import { Terminal, Cpu, Loader2, ArrowUp } from 'lucide-react';
 import { motion } from 'motion/react';
+import { ClientDB } from './lib/db';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -33,36 +35,35 @@ export default function App() {
   const [pricing, setPricing] = useState<PricingState | null>(null);
   const [counters, setCounters] = useState<CounterItem[] | null>(null);
 
-  const [globalLoading, setGlobalLoading] = useState<boolean>(true);
+  // loading state managers
+  const [dataFetched, setDataFetched] = useState<boolean>(false);
+  const [timeMinElapsed, setTimeMinElapsed] = useState<boolean>(false);
+  const [preloaderActive, setPreloaderActive] = useState<boolean>(true);
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
 
   // Initial datasets loader
   const fetchPublicPayloads = async () => {
     try {
-      const [rHero, rAbout, rSkills, rProjects, rServices, rSocial, rFooter, rPricing, rCounters] = await Promise.all([
-        fetch('/api/hero').then(res => res.json()),
-        fetch('/api/about').then(res => res.json()),
-        fetch('/api/skills').then(res => res.json()),
-        fetch('/api/projects').then(res => res.json()),
-        fetch('/api/services').then(res => res.json()),
-        fetch('/api/social').then(res => res.json()),
-        fetch('/api/footer').then(res => res.json()),
-        fetch('/api/pricing').then(res => res.json()),
-        fetch('/api/counters').then(res => res.json())
-      ]);
+      const data = await ClientDB.loadAllData();
 
-      setHero(rHero);
-      setAbout(rAbout);
-      setSkills(rSkills);
-      setProjects(rProjects);
-      setServices(rServices);
-      setSocial(rSocial);
-      setFooter(rFooter);
-      setPricing(rPricing);
-      setCounters(rCounters);
-      setGlobalLoading(false);
+      setHero(data.hero);
+      setAbout(data.about);
+      setSkills(data.skills);
+      setProjects(data.projects);
+      setServices(data.services);
+      setSocial(data.social);
+      setFooter(data.footer || null);
+      setPricing(data.pricing);
+      setCounters(data.counters || null);
+      setDataFetched(true);
+
+      // Fast-pass preloader if disabled
+      if (data.footer && data.footer.preloaderEnabled === false) {
+        setTimeMinElapsed(true);
+        setPreloaderActive(false);
+      }
     } catch (error) {
-      console.warn("Retrying public endpoint collections...", error);
+      console.warn("Retrying public database load...", error);
       // Wait and re-fetch to protect against early server connection lags
       setTimeout(fetchPublicPayloads, 2000);
     }
@@ -71,6 +72,22 @@ export default function App() {
   useEffect(() => {
     fetchPublicPayloads();
   }, []);
+
+  // Set the timer based on the footer preloader settings
+  useEffect(() => {
+    let duration = 1500;
+    if (footer) {
+      if (footer.preloaderEnabled === false) {
+        setTimeMinElapsed(true);
+        return;
+      }
+      duration = footer.preloaderDuration !== undefined ? footer.preloaderDuration : 1500;
+    }
+    const timer = setTimeout(() => {
+      setTimeMinElapsed(true);
+    }, duration);
+    return () => clearTimeout(timer);
+  }, [footer]);
 
   // Synchronize document title and favicon dynamically as configured from site settings
   useEffect(() => {
@@ -187,41 +204,27 @@ export default function App() {
   };
 
   // ==========================================
-  // ⏳ RENDER DYNAMIC SHINY SKELETON LOADERS
+  // ⏳ RENDER INITIAL BOOT HANDSHAKE (if API is not even fetched yet)
   // ==========================================
-  if (globalLoading) {
+  if (!dataFetched) {
     return (
-      <div className="min-h-screen bg-[#0F0F1A] text-slate-250 flex flex-col justify-center items-center p-6 space-y-6">
-        
-        {/* Animated Cyber Core loader */}
+      <div className="min-h-screen bg-[#07070D] text-slate-200 flex flex-col justify-center items-center p-6 space-y-6">
         <div className="relative flex items-center justify-center pointer-events-none">
           <div className="w-16 h-16 rounded-full border-2 border-[#06B6D4]/30 border-t-[#7C3AED] animate-spin" />
           <div className="absolute w-8 h-8 rounded-full bg-[#1A1A2E] flex items-center justify-center">
             <Cpu className="text-[#06B6D4] animate-pulse" size={14} />
           </div>
         </div>
-
-        {/* Skeleton Box layouts */}
-        <div className="w-full max-w-xl glass-card rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl">
-          <div className="flex items-center space-x-3 pb-3 border-b border-white/5">
+        <div className="w-full max-w-xl glass-card rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl text-center">
+          <div className="flex items-center space-x-3 pb-3 border-b border-white/5 justify-center">
             <Terminal size={16} className="text-[#7C3AED]" />
-            <span className="text-xs font-mono tracking-widest text-[#94A3B8] uppercase">devrobayad initialization boot...</span>
+            <span className="text-xs font-mono tracking-widest text-[#94A3B8] uppercase">loading server handshake...</span>
           </div>
-
-          <div className="space-y-3">
-            {/* Pulsing lines */}
-            <div className="h-4.5 bg-white/5 rounded-md animate-pulse w-3/4" />
-            <div className="h-3 bg-white/5 rounded-md animate-pulse w-full" />
-            <div className="h-3 bg-white/5 rounded-md animate-pulse w-5/6" />
-            <div className="h-3 bg-white/5 rounded-md animate-pulse w-2/3" />
-          </div>
-
           <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-[#06B6D4] font-mono justify-center">
             <Loader2 size={13} className="animate-spin" />
-            <span>Establishing handshake with datastore indices...</span>
+            <span>Connecting to secure database cloud index...</span>
           </div>
         </div>
-
       </div>
     );
   }
@@ -231,6 +234,15 @@ export default function App() {
   // ==========================================
   return (
     <div className="min-h-screen bg-[#0F0F1A] text-[#F8FAFC] flex flex-col justify-between">
+      
+      {/* Dynamic Customizable Preloader Overlay with premium exit motions */}
+      {preloaderActive && (
+        <Preloader 
+          footer={footer} 
+          isLoading={!(dataFetched && timeMinElapsed)} 
+          onFinished={() => setPreloaderActive(false)} 
+        />
+      )}
       
       {/* Interactive Custom Mouse cursor animations and trail options (system/neon/magnetic/retro) */}
       <CustomCursor styleType={footer?.cursorStyle || 'system'} />
