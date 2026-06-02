@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ExternalLink, Github, Sparkles, FolderCode, ArrowRight, Filter } from 'lucide-react';
 import { Project } from '../types';
+import { motion } from 'motion/react';
 
 interface ProjectsTabProps {
   projects: Project[] | null;
@@ -60,11 +61,37 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
   const displayedProjects = limit ? filteredProjects.slice(0, limit) : filteredProjects;
   const hasMore = limit ? filteredProjects.length > limit : false;
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 25 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      className="max-w-6xl mx-auto px-4 py-16"
+    >
       
       {/* Page Header */}
-      <div className="text-center mb-16">
+      <motion.div variants={itemVariants} className="text-center mb-16">
         <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
           Featured <span className="bg-gradient-to-r from-[#EC4899] to-[#7C3AED] bg-clip-text text-transparent">Projects</span>
         </h2>
@@ -72,10 +99,10 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
         <p className="text-[#94A3B8] max-w-xl mx-auto mt-4 text-sm sm:text-base font-normal">
           A showcase of engineered applications, specialized system integrations, and open-source packages.
         </p>
-      </div>
+      </motion.div>
 
       {/* Filter and search utilities bar */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-12 select-none">
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-center gap-2 mb-12 select-none">
         <div className="text-xs font-mono text-zinc-500 flex items-center gap-1.5 shrink-0 select-none mr-2">
           <Filter size={13} className="text-[#06B6D4]" />
           <span>FILTER PROJECTS:</span>
@@ -84,7 +111,7 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
           <button
             key={tag}
             onClick={() => setSelectedTag(tag)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold font-mono border transition-all duration-200 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold font-mono border transition-all duration-200 cursor-pointer ${
               selectedTag === tag
                 ? 'bg-gradient-to-r from-[#7C3AED]/20 to-[#06B6D4]/20 border-[#7C3AED] text-[#06B6D4] shadow-[0_0_12px_rgba(124,58,237,0.15)] font-bold'
                 : 'bg-white/3 border-white/5 hover:border-white/15 text-[#94A3B8]'
@@ -93,22 +120,25 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
             {tag}
           </button>
         ))}
-      </div>
+      </motion.div>
 
       {/* Grid of project cards */}
       {displayedProjects.length === 0 ? (
-        <div className="text-center py-20 bg-white/2 border border-white/5 rounded-2xl">
+        <motion.div variants={itemVariants} className="text-center py-20 bg-white/2 border border-white/5 rounded-2xl">
           <p className="text-zinc-400 text-sm">No featured projects found for the selected filter tag.</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayedProjects.map((project) => {
           const isComingSoon = project.status === 'Coming Soon' || !project.liveUrl;
 
           return (
-            <div
+            <motion.div
               key={project.id}
-              className="glass-card rounded-2xl overflow-hidden border border-white/5 flex flex-col group transition-all duration-300 hover:-translate-y-2 hover:border-[#7C3AED]/35 hover:shadow-[0_10px_30px_rgba(124,58,237,0.15)] h-full"
+              variants={itemVariants}
+              whileHover={{ y: -6, scale: 1.015 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="glass-card rounded-2xl overflow-hidden border border-white/5 flex flex-col group transition-all duration-300 hover:border-[#7C3AED]/35 hover:shadow-[0_10px_30px_rgba(124,58,237,0.15)] h-full"
             >
               {/* Thumbnail header */}
               <div className="relative aspect-video w-full overflow-hidden bg-slate-900 select-none">
@@ -132,7 +162,7 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
                   <h3 className="text-xl font-bold text-white group-hover:text-[#06B6D4] transition-colors duration-200">
                     {project.title}
                   </h3>
-                  <p className="text-sm text-[#94A3B8] leading-relaxed line-clamp-3">
+                  <p className="text-sm text-[#94A3B8] leading-relaxed line-clamp-3 font-normal">
                     {project.desc}
                   </p>
                 </div>
@@ -157,7 +187,7 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
                         href={project.liveUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] hover:brightness-115 flex items-center gap-1.5 transition shadow"
+                        className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] hover:brightness-115 flex items-center gap-1.5 transition shadow cursor-pointer"
                       >
                         <ExternalLink size={13} />
                         Live Demo
@@ -167,7 +197,7 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
                           href={project.githubUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-4 py-2 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 transition"
+                          className="px-4 py-2 rounded-lg text-xs font-semibold text-[#94A3B8] hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <Github size={13} />
                           Source Code
@@ -188,7 +218,7 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
                 </div>
               </div>
 
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -196,17 +226,17 @@ export default function ProjectsTab({ projects, limit, onViewAll }: ProjectsTabP
 
       {/* Slicing More Button */}
       {hasMore && onViewAll && (
-        <div className="mt-12 text-center select-none">
+        <motion.div variants={itemVariants} className="mt-12 text-center select-none">
           <button
             onClick={onViewAll}
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#EC4899]/15 to-[#7C3AED]/15 border border-[#7C3AED]/50 hover:border-[#7C3AED] text-[#EC4899] hover:text-[#06B6D4] font-bold rounded-xl text-xs sm:text-sm shadow-xl transition-all duration-300 transform hover:scale-[1.03]"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#EC4899]/15 to-[#7C3AED]/15 border border-[#7C3AED]/50 hover:border-[#7C3AED] text-[#EC4899] hover:text-[#06B6D4] font-bold rounded-xl text-xs sm:text-sm shadow-xl transition-all duration-300 transform hover:scale-[1.03] cursor-pointer"
           >
             <span>More Projects</span>
             <ArrowRight size={15} />
           </button>
-        </div>
+        </motion.div>
       )}
 
-    </div>
+    </motion.div>
   );
 }

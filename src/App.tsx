@@ -204,36 +204,10 @@ export default function App() {
   };
 
   // ==========================================
-  // ⏳ RENDER INITIAL BOOT HANDSHAKE (if API is not even fetched yet)
-  // ==========================================
-  if (!dataFetched) {
-    return (
-      <div className="min-h-screen bg-[#07070D] text-slate-200 flex flex-col justify-center items-center p-6 space-y-6">
-        <div className="relative flex items-center justify-center pointer-events-none">
-          <div className="w-16 h-16 rounded-full border-2 border-[#06B6D4]/30 border-t-[#7C3AED] animate-spin" />
-          <div className="absolute w-8 h-8 rounded-full bg-[#1A1A2E] flex items-center justify-center">
-            <Cpu className="text-[#06B6D4] animate-pulse" size={14} />
-          </div>
-        </div>
-        <div className="w-full max-w-xl glass-card rounded-2xl p-6 sm:p-8 space-y-4 shadow-2xl text-center">
-          <div className="flex items-center space-x-3 pb-3 border-b border-white/5 justify-center">
-            <Terminal size={16} className="text-[#7C3AED]" />
-            <span className="text-xs font-mono tracking-widest text-[#94A3B8] uppercase">loading server handshake...</span>
-          </div>
-          <div className="pt-2 flex items-center gap-2 text-xs font-semibold text-[#06B6D4] font-mono justify-center">
-            <Loader2 size={13} className="animate-spin" />
-            <span>Connecting to secure database cloud index...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
   // 💻 RENDER CORE PORTFOLIO APPLICATION
   // ==========================================
   return (
-    <div className="min-h-screen bg-[#0F0F1A] text-[#F8FAFC] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#0F0F1A] text-[#F8FAFC] flex flex-col justify-between w-full overflow-x-hidden">
       
       {/* Dynamic Customizable Preloader Overlay with premium exit motions */}
       {preloaderActive && (
@@ -247,8 +221,10 @@ export default function App() {
       {/* Interactive Custom Mouse cursor animations and trail options (system/neon/magnetic/retro) */}
       <CustomCursor styleType={footer?.cursorStyle || 'system'} />
       
-      {/* Dynamic Navigation Header */}
-      <Navbar activeTab={activeTab} setActiveTab={handleTabChange} footer={footer} />
+      {dataFetched && (
+        <>
+          {/* Dynamic Navigation Header */}
+          <Navbar activeTab={activeTab} setActiveTab={handleTabChange} footer={footer} />
 
       {/* Primary Tab Viewport and shell space */}
       <main className="flex-grow">
@@ -256,9 +232,15 @@ export default function App() {
         {/* Render all landing page sections sequentially if on the main portfolio view */}
         {!['admin', 'booking-confirmed', 'all-projects', 'all-services'].includes(activeTab) && (
           <div className="space-y-0">
-            <section id="home" className="scroll-mt-20 pt-28">
+            <motion.section 
+              id="home" 
+              className="scroll-mt-20 pt-28"
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            >
               <HomeTab hero={hero} about={about} counters={counters} setActiveTab={handleTabChange} />
-            </section>
+            </motion.section>
 
             <motion.section 
               id="about" 
@@ -345,59 +327,85 @@ export default function App() {
 
         {/* Dedicated view for all projects page */}
         {activeTab === 'all-projects' && (
-          <div className="pt-28">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-28"
+          >
             <AllProjectsPage 
               projects={projects} 
               onBack={() => handleTabChange('home')} 
             />
-          </div>
+          </motion.div>
         )}
 
         {/* Dedicated view for all services page */}
         {activeTab === 'all-services' && (
-          <div className="pt-28">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-28"
+          >
             <AllServicesPage 
               services={services} 
               onBack={() => handleTabChange('home')} 
               setActiveTab={handleTabChange}
               setPreSelectedService={setPreSelectedService}
             />
-          </div>
+          </motion.div>
         )}
 
         {/* Dedicated view for booking success */}
         {activeTab === 'booking-confirmed' && (
-          <div className="pt-28">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-28"
+          >
             <BookingConfirmed 
               booking={confirmedBooking} 
               setActiveTab={handleTabChange} 
             />
-          </div>
+          </motion.div>
         )}
 
         {/* Dedicated view for admin backend CMS */}
         {activeTab === 'admin' && (
-          <div className="pt-28">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -30 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-28"
+          >
             <AdminPanel onLogout={() => handleTabChange('home')} onDataChange={fetchPublicPayloads} />
-          </div>
+          </motion.div>
         )}
 
       </main>
 
-      {/* Dynamic Navigation Footer */}
-      <Footer footer={footer} social={social} setActiveTab={handleTabChange} />
+          {/* Dynamic Navigation Footer */}
+          <Footer footer={footer} social={social} setActiveTab={handleTabChange} />
 
-      {/* Scroll to top floating action button */}
-      {showScrollTop && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce-subtle">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="p-3.5 bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] rounded-full text-slate-950 font-bold hover:scale-110 active:scale-95 shadow-[0_4px_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(124,58,237,0.6)] cursor-pointer transition-all duration-300 flex items-center justify-center border border-white/20"
-            title="Scroll to Top"
-          >
-            <ArrowUp size={18} className="text-white" strokeWidth={3} />
-          </button>
-        </div>
+          {/* Scroll to top floating action button */}
+          {showScrollTop && (
+            <div className="fixed bottom-6 right-6 z-50 animate-bounce-subtle">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="p-3.5 bg-gradient-to-br from-[#7C3AED] to-[#06B6D4] rounded-full text-slate-950 font-bold hover:scale-110 active:scale-95 shadow-[0_4px_20px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(124,58,237,0.6)] cursor-pointer transition-all duration-300 flex items-center justify-center border border-white/20"
+                title="Scroll to Top"
+              >
+                <ArrowUp size={18} className="text-white" strokeWidth={3} />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
     </div>

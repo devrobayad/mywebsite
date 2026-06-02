@@ -114,12 +114,31 @@ export default function ContactTab({
     setMsgFeedback(null);
 
     try {
-      await ClientDB.addMessage({
+      const msgPayload = {
         name: msgName,
         email: msgEmail,
         subject: msgSubject,
         message: msgBody
-      });
+      };
+      await ClientDB.addMessage(msgPayload);
+
+      // Trigger automatic SMTP email notification dispatch in background
+      try {
+        const emailSettings = await ClientDB.getEmailSettings();
+        if (emailSettings && emailSettings.enableNotifications) {
+          fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'contact',
+              data: msgPayload,
+              emailSettings
+            })
+          }).catch(err => console.error("Error dispatching background post:", err));
+        }
+      } catch (err) {
+        console.warn("Background notification settings parse failed:", err);
+      }
 
       setMsgSending(false);
       setMsgFeedback({ status: 'success', text: `Message sent! Thank you ${msgName}. I will correspond shortly.` });
@@ -146,7 +165,7 @@ export default function ContactTab({
     setBookingSending(true);
 
     try {
-      const bObj = await ClientDB.addBooking({
+      const bookingPayload = {
         name: bName,
         email: bEmail,
         service: bService,
@@ -154,7 +173,26 @@ export default function ContactTab({
         time: bTime,
         meetingType: bType,
         notes: bNotes
-      });
+      };
+      const bObj = await ClientDB.addBooking(bookingPayload);
+
+      // Trigger automatic SMTP booking email notification dispatch in background
+      try {
+        const emailSettings = await ClientDB.getEmailSettings();
+        if (emailSettings && emailSettings.enableNotifications) {
+          fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'booking',
+              data: bookingPayload,
+              emailSettings
+            })
+          }).catch(err => console.error("Error dispatching booking background post:", err));
+        }
+      } catch (err) {
+        console.warn("Background booking notification settings parse failed:", err);
+      }
 
       setBookingSending(false);
       onBookingSuccess(bObj);

@@ -12,8 +12,48 @@ interface HomeTabProps {
 
 function AnimatedCounterText({ value }: { value: string }) {
   const [displayValue, setDisplayValue] = useState('0');
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const elementRef = React.useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    if (hasAnimated) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        const isPreloaderGone = !document.getElementById('preloader-overlay');
+        
+        if (entry.isIntersecting && isPreloaderGone) {
+          setHasAnimated(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    const fallbackTimer = setInterval(() => {
+      const isPreloaderGone = !document.getElementById('preloader-overlay');
+      const rect = elementRef.current?.getBoundingClientRect();
+      const inViewport = rect ? (rect.top < window.innerHeight && rect.bottom > 0) : false;
+      
+      if (isPreloaderGone && inViewport) {
+        setHasAnimated(true);
+        clearInterval(fallbackTimer);
+      }
+    }, 300);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(fallbackTimer);
+    };
+  }, [hasAnimated]);
+
+  useEffect(() => {
+    if (!hasAnimated) return;
+
     const numericMatch = value.match(/^([^0-9.]*)([0-9.]+)(.*)$/);
     if (!numericMatch) {
       setDisplayValue(value);
@@ -30,7 +70,7 @@ function AnimatedCounterText({ value }: { value: string }) {
       return;
     }
 
-    const duration = 1200; // 1.2 seconds animation
+    const duration = 1600; // premium 1.6 seconds smooth count
     const framesPerSecond = 60;
     const totalFrames = Math.max(1, Math.floor((duration / 1000) * framesPerSecond));
     let currentFrame = 0;
@@ -42,8 +82,8 @@ function AnimatedCounterText({ value }: { value: string }) {
       currentFrame++;
       const progress = currentFrame / totalFrames;
       
-      // Easing outQuad function (starts fast, slows down gracefully at the end)
-      const easeProgress = progress * (2 - progress);
+      // Premium cubic ease-out curve (feels highly professional)
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
       const currentNum = easeProgress * targetNum;
 
       if (currentFrame >= totalFrames) {
@@ -52,12 +92,12 @@ function AnimatedCounterText({ value }: { value: string }) {
       } else {
         setDisplayValue(`${prefix}${currentNum.toFixed(decimalPlaces)}${suffix}`);
       }
-    }, duration / totalFrames);
+    }, Math.round(duration / totalFrames));
 
     return () => clearInterval(timer);
-  }, [value]);
+  }, [hasAnimated, value]);
 
-  return <>{displayValue}</>;
+  return <span ref={elementRef}>{displayValue}</span>;
 }
 
 export default function HomeTab({ hero, about, counters, setActiveTab }: HomeTabProps) {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { Skill } from '../types';
 import IconRenderer from './IconRenderer';
+import { motion } from 'motion/react';
 
 interface SkillsTabProps {
   skills: Skill[] | null;
@@ -57,11 +58,37 @@ export default function SkillsTab({ skills }: SkillsTabProps) {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 25 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      className="max-w-6xl mx-auto px-4 py-16"
+    >
       
       {/* Page header */}
-      <div className="text-center mb-16">
+      <motion.div variants={itemVariants} className="text-center mb-16">
         <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
           Skills & <span className="bg-gradient-to-r from-[#06B6D4] to-[#7C3AED] bg-clip-text text-transparent text-glow">Expertise</span>
         </h2>
@@ -69,7 +96,7 @@ export default function SkillsTab({ skills }: SkillsTabProps) {
         <p className="text-[#94A3B8] max-w-xl mx-auto mt-4 text-sm sm:text-base font-normal">
           A granular view of my architectural and development fluency spanning multiple tech ecosystems and paradigms.
         </p>
-      </div>
+      </motion.div>
 
       {/* Grid of skill categories */}
       <div className="space-y-16">
@@ -80,7 +107,11 @@ export default function SkillsTab({ skills }: SkillsTabProps) {
           if (categorySkills.length === 0) return null;
 
           return (
-            <div key={category} className="space-y-6">
+            <motion.div 
+              key={category} 
+              variants={itemVariants} 
+              className="space-y-6"
+            >
               {/* Category label */}
               <div className="flex items-center gap-3">
                 <h3 className={`text-xl sm:text-2xl font-bold tracking-wide uppercase ${theme.text}`}>
@@ -92,8 +123,10 @@ export default function SkillsTab({ skills }: SkillsTabProps) {
               {/* Skills elements list */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {categorySkills.map((skill) => (
-                  <div
+                  <motion.div
                     key={skill.id}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     className={`glass-card p-4.5 rounded-xl border border-white/5 flex items-center gap-4 transition-all duration-300 hover:scale-102 ${theme.border} ${theme.glow}`}
                   >
                     {/* Icon frame */}
@@ -110,14 +143,14 @@ export default function SkillsTab({ skills }: SkillsTabProps) {
                         {skill.category}
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-    </div>
+    </motion.div>
   );
 }

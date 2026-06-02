@@ -3,7 +3,7 @@ import {
   Lock, User, LayoutDashboard, Sparkles, UserCheck, Flame, FolderGit, 
   Camera, Globe, Mail, DollarSign, CalendarCheck, Clock, LogOut, 
   Plus, Trash2, Edit2, CheckCircle2, XCircle, Eye, EyeOff, Loader2, FileText, Upload, HelpCircle,
-  Calendar, Phone, ChevronUp, ChevronDown, Activity
+  Calendar, Phone, ChevronUp, ChevronDown, Activity, MousePointer
 } from 'lucide-react';
 import { 
   HeroData, AboutData, Skill, Project, SocialLinks, FooterData, ContactMessage, 
@@ -27,7 +27,7 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // --- CMS WORKSPACE SELECTED SECTIONS ---
-  const [activeSection, setActiveSection] = useState<'hero' | 'about' | 'skills' | 'projects' | 'services' | 'photo' | 'social' | 'messages' | 'cv' | 'pricing' | 'bookings' | 'availability' | 'footer' | 'counters' | 'email' | 'credentials'>('hero');
+  const [activeSection, setActiveSection] = useState<'hero' | 'about' | 'skills' | 'projects' | 'services' | 'photo' | 'social' | 'messages' | 'cv' | 'pricing' | 'bookings' | 'availability' | 'footer' | 'cursor-theme' | 'counters' | 'email' | 'credentials'>('hero');
 
   // Email state variables
   const [senderEmail, setSenderEmail] = useState('devrobayad.info@gmail.com');
@@ -941,13 +941,53 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
 
     setReplyLoading(true);
     try {
+      const msg = messages.find(m => m.id === id);
+      if (!msg) {
+        throw new Error("Message not found.");
+      }
+
       await ClientDB.saveMessageReply(id, replyText);
-      triggerToast('Reply dispatched locally!');
+
+      // Attempt to send a real email reply using user configured SMTP settings
+      try {
+        const emailSettings = {
+          senderEmail,
+          smtpPass,
+          receiverEmail,
+          enableNotifications: true
+        };
+
+        const res = await fetch('/api/send-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'contact',
+            recipientName: msg.name,
+            recipientEmail: msg.email,
+            subject: msg.subject,
+            originalMessage: msg.message,
+            replyText: replyText,
+            emailSettings
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          console.error("Failed to mail client:", errData.error);
+          triggerToast('Reply saved, but SMTP dispatch failed! Check your credentials.', 'err');
+        } else {
+          triggerToast('E-mail reply sent and logged successfully!');
+        }
+      } catch (mailErr) {
+        console.error("Mail dispatch exception:", mailErr);
+        triggerToast('Reply saved, but connection failed!', 'err');
+      }
+
       setReplyText('');
       setActiveReplyId(null);
       loadCMSData();
-    } catch {
-      triggerToast('Failed to reply message.', 'err');
+    } catch (err: any) {
+      triggerToast(err.message || 'Failed to reply message.', 'err');
     } finally {
       setReplyLoading(false);
     }
@@ -961,13 +1001,55 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
 
     setReplyLoading(true);
     try {
+      const bObj = bookings.find(b => b.id === id);
+      if (!bObj) {
+        throw new Error("Booking not found.");
+      }
+
       await ClientDB.saveBookingReply(id, replyText);
-      triggerToast('Reply dispatched locally!');
+
+      // Attempt to send a real email reply using user configured SMTP settings
+      try {
+        const emailSettings = {
+          senderEmail,
+          smtpPass,
+          receiverEmail,
+          enableNotifications: true
+        };
+
+        const originalMsg = `Consultation Service: ${bObj.service}\nRequested Date: ${bObj.date}\nRequested Time Slot: ${bObj.time}\nFormat: ${bObj.meetingType}\nNotes: ${bObj.notes || 'None'}`;
+
+        const res = await fetch('/api/send-reply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking',
+            recipientName: bObj.name,
+            recipientEmail: bObj.email,
+            subject: `Your scheduled ${bObj.service} consultation details`,
+            originalMessage: originalMsg,
+            replyText: replyText,
+            emailSettings
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          console.error("Failed to mail client:", errData.error);
+          triggerToast('Reply saved, but SMTP dispatch failed! Check your credentials.', 'err');
+        } else {
+          triggerToast('Booking update e-mail sent successfully!');
+        }
+      } catch (mailErr) {
+        console.error("Mail dispatch exception:", mailErr);
+        triggerToast('Reply saved, but connection failed!', 'err');
+      }
+
       setReplyText('');
       setActiveBookingReplyId(null);
       loadCMSData();
-    } catch {
-      triggerToast('Failed to dispatch reply.', 'err');
+    } catch (err: any) {
+      triggerToast(err.message || 'Failed to dispatch reply.', 'err');
     } finally {
       setReplyLoading(false);
     }
@@ -1213,15 +1295,40 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
     setTestLogs(null);
     setTestSuccess(null);
     try {
-      // Simulate SMTP connection check & dynamic notification test cleanly
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const emailSettings = {
+        senderEmail,
+        smtpPass,
+        receiverEmail,
+        enableNotifications: true
+      };
+      
+      const response = await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'contact',
+          data: {
+            name: "Portfolio SMTP Test",
+            email: senderEmail,
+            subject: "SMTP Setup Live Verification",
+            message: "Success! This is a real SMTP verification email validating that your Gmail SMTP configuration and Google App Password on your portfolio website are functional and correct. Your contact messages and client meeting bookings will now deliver directly to your inbox!"
+          },
+          emailSettings
+        })
+      });
+
+      const resJson = await response.json();
+      if (!response.ok) {
+        throw new Error(resJson.error || "Email delivery failed.");
+      }
+
       setTestSuccess(true);
-      setTestLogs(`SMTP parameters verified. Simulated test dispatch message saved perfectly for receiver address: ${receiverEmail}! Check your portfolio notification state logs.`);
-      triggerToast('Simulated email route test succeeded!');
+      setTestLogs(`Great news! A real SMTP verification email has been dispatched via smtp.gmail.com. Check the inbox of: ${receiverEmail}!`);
+      triggerToast('Real test email dispatched successfully!');
     } catch (err: any) {
       setTestSuccess(false);
-      setTestLogs(err.message || 'SMTP Connection failure simulation.');
-      triggerToast('Integrations test failure.', 'err');
+      setTestLogs(err.message || 'SMTP authentication or connection failure.');
+      triggerToast('SMTP test failed. Please verify your App Password.', 'err');
     } finally {
       setTestLoading(false);
     }
@@ -1376,9 +1483,10 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
             { id: 'bookings', label: '11. Meeting Bookings', icon: CalendarCheck, count: pendingBookingCount, highlight: true },
             { id: 'availability', label: '12. Availability Rules', icon: Clock },
             { id: 'footer', label: '13. Logo & Footer Settings', icon: FileText },
-            { id: 'counters', label: '14. Stats Counters', icon: Activity },
-            { id: 'email', label: '15. Gmail SMTP Connect', icon: Mail },
-            { id: 'credentials', label: '16. Admin Login & Security', icon: Lock }
+            { id: 'cursor-theme', label: '14. Interactive Cursor & Effects', icon: MousePointer },
+            { id: 'counters', label: '15. Stats Counters', icon: Activity },
+            { id: 'email', label: '16. Gmail SMTP Connect', icon: Mail },
+            { id: 'credentials', label: '17. Admin Login & Security', icon: Lock }
           ].map((sec) => {
             const SelectedIcon = sec.icon;
             const isSel = activeSection === sec.id;
@@ -3746,267 +3854,6 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
                       />
                     </div>
 
-                    {/* Website Custom Mouse Cursor settings */}
-                    <div className="space-y-2 sm:col-span-2 p-4 bg-white/[0.02] border border-white/5 rounded-xl font-sans mt-2">
-                      <span className="text-xs font-bold text-[#06B6D4] block">Website Cursor & Interactive Pointer Theme</span>
-                      <p className="text-[11px] text-[#94A3B8] leading-tight mb-3">
-                        Choose a custom mouse pointer style for desktop visitors to make the browsing experience highly interactive and aesthetically outstanding.
-                      </p>
-                      
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                        {[
-                          { id: 'system', name: 'System default', desc: 'Standard browser pointer' },
-                          { id: 'neon', name: 'Neon Glow Ring', desc: 'Glowing responsive cyan ring' },
-                          { id: 'magnetic', name: 'Magnetic Tracker', desc: 'Sleek white dot with orbit trail' },
-                          { id: 'retro', name: 'Hacker Terminal', desc: 'Green vintage command block' }
-                        ].map((cOpt) => (
-                          <button
-                            key={cOpt.id}
-                            type="button"
-                            onClick={() => setFooter({ ...footer, cursorStyle: cOpt.id as any })}
-                            className={`p-3.5 rounded-xl border text-left transition text-white ${
-                              (footer.cursorStyle || 'system') === cOpt.id
-                                ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-white shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                                : 'bg-slate-900/40 border-white/5 text-[#94A3B8] hover:border-white/10 hover:text-white'
-                            }`}
-                          >
-                            <span className="text-[11px] font-bold block mb-1">{cOpt.name}</span>
-                            <span className="text-[9px] text-[#64748B] block leading-tight">{cOpt.desc}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Page Preloader Customizer settings */}
-                    <div className="space-y-4 sm:col-span-2 p-5 bg-[#0A0A1F]/80 border border-white/10 rounded-2xl font-sans mt-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3">
-                        <div>
-                          <span className="text-xs font-bold text-[#06B6D4] block flex items-center gap-2">
-                            <Activity size={15} className="text-[#06B6D4] animate-pulse" />
-                            Page Preloader Settings & Animation Engine
-                          </span>
-                          <p className="text-[11px] text-[#94A3B8] leading-tight mt-1">
-                            Configure a highly polished dynamic loading animation screen seen by visitors on first entry and fresh reloads.
-                          </p>
-                        </div>
-                        
-                        <div className="mt-3 sm:mt-0 flex items-center gap-2">
-                          <span className="text-xs font-semibold text-[#94A3B8]">Status:</span>
-                          <button
-                            type="button"
-                            onClick={() => setFooter({ ...footer, preloaderEnabled: !footer.preloaderEnabled })}
-                            className={`px-3 py-1 rounded-lg text-[10px] font-bold font-mono transition-all duration-300 ${
-                              footer.preloaderEnabled !== false
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-slate-800 text-slate-500 border border-white/5'
-                            }`}
-                          >
-                            {footer.preloaderEnabled !== false ? '● ACTIVE' : '○ DISABLED'}
-                          </button>
-                        </div>
-                      </div>
-
-                      {footer.preloaderEnabled !== false && (
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
-                          {/* Options Form panel */}
-                          <div className="lg:col-span-7 space-y-4">
-                            {/* Option 2: Preloader style */}
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold text-[#94A3B8] block">Select Preloader Animation Theme</label>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                                {[
-                                  { id: 'cyber-core', name: 'Cybernetic Core', desc: 'glowing futuristic multi-ring rings' },
-                                  { id: 'quantum-pulse', name: 'Quantum Pulse', desc: 'ambient soft glow with breathing logo' },
-                                  { id: 'hacker-terminal', name: 'Hacker Terminal', desc: 'vintage neon shell logs compiling site' },
-                                  { id: 'neon-shimmer', name: 'Neon Shimmer', desc: 'sleek horizontal loading progress glow' },
-                                  { id: 'custom-logo-spin', name: '3D Custom Logo Spin', desc: 'perspective rotating logo card with orbits' }
-                                ].map((pOpt) => (
-                                  <button
-                                    key={pOpt.id}
-                                    type="button"
-                                    onClick={() => setFooter({ ...footer, preloaderType: pOpt.id as any })}
-                                    className={`p-3 rounded-xl border text-left transition duration-250 select-none ${
-                                      (footer.preloaderType || 'cyber-core') === pOpt.id
-                                        ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-white shadow-[0_0_12px_rgba(6,182,212,0.12)]'
-                                        : 'bg-slate-900/50 border-white/5 text-[#94A3B8] hover:border-white/10 hover:text-white'
-                                    }`}
-                                  >
-                                    <span className="text-xs font-bold block mb-0.5 text-white">{pOpt.name}</span>
-                                    <span className="text-[9px] text-[#64748B] block leading-tight">{pOpt.desc}</span>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Option 3: Hold duration */}
-                            <div className="space-y-1.5 bg-white/[0.01] p-3 border border-white/5 rounded-xl">
-                              <div className="flex justify-between text-xs font-semibold">
-                                <span className="text-[#94A3B8]">Loader Hold Duration Limit</span>
-                                <span className="text-[#06B6D4] font-mono font-bold">
-                                  {footer.preloaderDuration ? (footer.preloaderDuration / 1000).toFixed(1) : '1.5'} seconds
-                                </span>
-                              </div>
-                              <input
-                                type="range"
-                                min="500"
-                                max="5000"
-                                step="100"
-                                value={footer.preloaderDuration !== undefined ? footer.preloaderDuration : 1500}
-                                onChange={(e) => setFooter({ ...footer, preloaderDuration: Number(e.target.value) })}
-                                className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#06B6D4]"
-                              />
-                            </div>
-
-                            {/* Option 4: Preloader logo */}
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold text-[#94A3B8] block">Upload Preloader Logo</label>
-                              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                                <div className="flex-1 bg-[#0F0F1A] border border-white/10 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 font-mono text-[10px] text-zinc-400 overflow-hidden truncate">
-                                  {footer.preloaderLogoUrl ? (
-                                    <div className="flex items-center gap-2 max-w-full">
-                                      <img src={footer.preloaderLogoUrl} alt="Preloader Logo" className="w-6 h-6 object-contain rounded bg-white/5" referrerPolicy="no-referrer" />
-                                      <span className="text-[9px] text-[#94A3B8] truncate">{footer.preloaderLogoUrl.split('/').pop()}</span>
-                                    </div>
-                                  ) : (
-                                    <span>Falls back to site logo or text initial monogram</span>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
-                                  <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[#06B6D4] text-[11px] font-semibold rounded-xl text-white cursor-pointer transition select-none">
-                                    <Upload size={13} className={preloaderLogoProgress ? 'animate-spin' : ''} />
-                                    {preloaderLogoProgress ? 'Uploading...' : 'Upload Logo'}
-                                    <input type="file" accept="image/*" onChange={handlePreloaderLogoUpload} className="hidden" />
-                                  </label>
-                                  {footer.preloaderLogoUrl && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setFooter({ ...footer, preloaderLogoUrl: "" })}
-                                      className="px-2.5 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:text-white text-[11px] font-medium rounded-xl transition"
-                                    >
-                                      Clear
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Autofill triggers */}
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                <span className="text-[9px] text-[#64748B] flex items-center">Autofill:</span>
-                                {footer.headerLogoImg && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setFooter({ ...footer, preloaderLogoUrl: footer.headerLogoImg })}
-                                    className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] text-[#94A3B8] hover:text-white transition"
-                                  >
-                                    Copy Header Logo
-                                  </button>
-                                )}
-                                {footer.siteFavicon && (
-                                  <button
-                                    type="button"
-                                    onClick={() => setFooter({ ...footer, preloaderLogoUrl: footer.siteFavicon })}
-                                    className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] text-[#94A3B8] hover:text-white transition"
-                                  >
-                                    Copy Web Favicon
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Live render preview container card */}
-                          <div className="lg:col-span-5 flex flex-col justify-between border border-white/5 rounded-2xl bg-black/40 p-4 font-sans text-center">
-                            <div className="text-left space-y-1">
-                              <span className="text-xs font-bold text-white block">Interactive Live Preview Panel</span>
-                              <p className="text-[10px] text-[#94A3B8] leading-tight">
-                                Live-render preview of the chosen style before committing settings.
-                              </p>
-                            </div>
-
-                            {/* Mini Sandbox Simulator viewport */}
-                            <div className="relative h-44 w-full border border-white/5 bg-[#05050C] rounded-xl overflow-hidden flex flex-col items-center justify-center p-3 mt-3">
-                              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#06B6D4]/30 to-transparent" />
-                              
-                              {/* Cyber Core */}
-                              {(footer.preloaderType || 'cyber-core') === 'cyber-core' && (
-                                <div className="flex flex-col items-center space-y-2.5 relative z-10 w-full">
-                                  <div className="relative w-14 h-14 flex items-center justify-center">
-                                    <div className="absolute inset-0 rounded-full border border-dashed border-[#7C3AED]/30 animate-[spin_8s_linear_infinite]" />
-                                    <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-[#06B6D4] border-b-[#7C3AED] animate-[spin_1.5s_linear_infinite]" />
-                                    <div className="absolute w-7 h-7 rounded-full bg-[#0D0D19] border border-white/10 flex items-center justify-center text-[7px] text-[#06B6D4] font-bold">
-                                      CPU
-                                    </div>
-                                  </div>
-                                  <span className="font-mono text-[7px] text-[#A78BFA] tracking-[0.2em] font-medium uppercase">ACTIVE DRIVE CORE</span>
-                                </div>
-                              )}
-
-                              {/* Quantum Pulse */}
-                              {(footer.preloaderType || 'cyber-core') === 'quantum-pulse' && (
-                                <div className="flex flex-col items-center space-y-2 relative z-10 text-center w-full">
-                                  <div className="absolute w-24 h-24 rounded-full bg-[#7C3AED]/5 filter blur-lg animate-pulse" />
-                                  <div className="relative bg-[#0F0F23] p-2 rounded-xl border border-white/10 shadow-[0_4px_15px_rgba(124,58,237,0.15)] flex items-center justify-center animate-pulse">
-                                    <Sparkles className="text-[#06B6D4]" size={14} />
-                                  </div>
-                                  <span className="font-mono text-[7px] text-[#06B6D4] tracking-widest uppercase mt-2">Quantum Stream</span>
-                                </div>
-                              )}
-
-                              {/* Hacker Terminal */}
-                              {(footer.preloaderType || 'cyber-core') === 'hacker-terminal' && (
-                                <div className="w-full max-w-[160px] bg-[#030307]/90 border border-emerald-500/20 rounded p-2 font-mono text-[6px] text-emerald-400 space-y-1 relative z-10 text-left">
-                                  <div className="flex items-center justify-between border-b border-emerald-500/10 pb-0.5">
-                                    <span className="text-[5px] text-emerald-600 font-bold uppercase">DB_SYNC_INDEX</span>
-                                  </div>
-                                  <div className="space-y-0.5 leading-none text-emerald-300">
-                                    <div>&gt; mount diagnostic: ok</div>
-                                    <div>&gt; connecting API datastore: ok</div>
-                                    <div>&gt; render views: successful</div>
-                                    <span className="inline-block w-0.5 h-1.5 bg-emerald-450 animate-pulse" />
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Neon Shimmer */}
-                              {(footer.preloaderType || 'cyber-core') === 'neon-shimmer' && (
-                                <div className="flex flex-col items-center space-y-2.5 relative z-10 w-full px-5">
-                                  <div className="relative p-2 bg-[#0B0B14] rounded-full border border-white/10 flex items-center justify-center animate-spin">
-                                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-r-[#06B6D4] border-l-[#7C3AED]" />
-                                    <div className="w-4 h-4 bg-[#121226] rounded-full" />
-                                  </div>
-                                  <div className="w-full h-0.5 bg-white/5 rounded-full overflow-hidden relative">
-                                    <div className="absolute h-full left-0 bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] w-2/3 animate-[pulse_1s_infinite]" />
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Custom Logo Spin */}
-                              {(footer.preloaderType || 'cyber-core') === 'custom-logo-spin' && (
-                                <div className="flex flex-col items-center space-y-2 relative z-10 w-full">
-                                  <div className="w-10 h-10 relative flex items-center justify-center animate-[bounce_2s_infinite]">
-                                    <div className="absolute inset-0 rounded-full bg-[#06B6D4]/10 filter blur" />
-                                    <div className="w-8 h-8 bg-[#0E0E1F] border border-white/10 rounded-xl flex items-center justify-center font-bold text-[7px] text-[#06B6D4]">
-                                      LOGO
-                                    </div>
-                                  </div>
-                                  <span className="text-[6px] text-[#A78BFA] uppercase tracking-widest font-mono">3D Spin Active</span>
-                                </div>
-                              )}
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => window.location.reload()}
-                              className="mt-3.5 w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-bold tracking-wider font-mono hover:text-[#06B6D4] uppercase rounded-xl transition"
-                            >
-                              🔄 Test Live Site Reload
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
                     {/* Website Title & Favicon Customizer */}
                     <div className="space-y-2 sm:col-span-2 p-4 bg-[#7C3AED]/5 border border-[#7C3AED]/20 rounded-xl mt-4 font-sans">
                       <span className="text-xs font-bold text-[#06B6D4] block">Website Tab Identity & Favicon Metadata</span>
@@ -4198,6 +4045,293 @@ export default function AdminPanel({ onLogout, onDataChange }: AdminPanelProps) 
                     className="px-6 py-2.5 bg-[#06B6D4] text-slate-900 rounded-xl text-xs font-bold hover:brightness-110 cursor-pointer transition-all shadow-[0_0_15px_rgba(6,182,212,0.2)]"
                   >
                     Save Branding & Identity Settings
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SECTION 14: INTERACTIVE CURSOR AND PRELOADER CUSTOMIZATION */}
+            {activeSection === 'cursor-theme' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-bold text-white border-b border-white/5 pb-2">Website Cursor & Preloader Animation Effects</h3>
+                  <p className="text-sm text-[#94A3B8] leading-relaxed mt-2">
+                    Separate from logo & footer settings, configure a highly interactive visitor-side browsing theme including custom mouse pointers and screen preloader animations.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Website Custom Mouse Cursor settings */}
+                  <div className="space-y-3 p-5 bg-[#151528]/50 border border-white/5 rounded-2xl font-sans">
+                    <span className="text-sm font-bold text-[#06B6D4] block flex items-center gap-2">
+                      <MousePointer size={16} className="text-[#06B6D4]" />
+                      Website Hover Cursor Theme
+                    </span>
+                    <p className="text-[11px] text-[#94A3B8] leading-tight mb-4">
+                      Choose a custom responsive mouse pointer style for desktop visitors to make the navigation live and aesthetically outstanding.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      {[
+                        { id: 'system', name: 'System default', desc: 'Standard browser pointer' },
+                        { id: 'neon', name: 'Neon Glow Ring', desc: 'Glowing responsive cyan ring' },
+                        { id: 'magnetic', name: 'Magnetic Tracker', desc: 'Sleek white dot with orbit trail' },
+                        { id: 'retro', name: 'Hacker Terminal', desc: 'Green vintage command block' }
+                      ].map((cOpt) => (
+                        <button
+                          key={cOpt.id}
+                          type="button"
+                          onClick={() => setFooter({ ...footer, cursorStyle: cOpt.id as any })}
+                          className={`p-3.5 rounded-xl border text-left transition duration-200 cursor-pointer ${
+                            (footer.cursorStyle || 'system') === cOpt.id
+                              ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-white shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                              : 'bg-slate-900/40 border-white/5 text-[#94A3B8] hover:border-white/10 hover:text-white'
+                          }`}
+                        >
+                          <span className="text-[11px] font-bold block mb-1 text-white">{cOpt.name}</span>
+                          <span className="text-[9px] text-[#64748B] block leading-tight">{cOpt.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Page Preloader Customizer settings */}
+                  <div className="space-y-4 p-5 bg-[#0A0A1F]/80 border border-white/10 rounded-2xl font-sans">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3">
+                      <div>
+                        <span className="text-xs font-bold text-[#06B6D4] block flex items-center gap-2">
+                          <Activity size={15} className="text-[#06B6D4] animate-pulse" />
+                          Page Preloader Settings & Animation Engine
+                        </span>
+                        <p className="text-[11px] text-[#94A3B8] leading-tight mt-1">
+                          Configure a highly polished dynamic loading animation screen seen by visitors on first entry and fresh reloads.
+                        </p>
+                      </div>
+                      
+                      <div className="mt-3 sm:mt-0 flex items-center gap-2">
+                        <span className="text-xs font-semibold text-[#94A3B8]">Status:</span>
+                        <button
+                          type="button"
+                          onClick={() => setFooter({ ...footer, preloaderEnabled: !footer.preloaderEnabled })}
+                          className={`px-3 py-1 rounded-lg text-[10px] font-bold font-mono transition-all duration-300 cursor-pointer ${
+                            footer.preloaderEnabled !== false
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-slate-800 text-slate-500 border border-white/5'
+                          }`}
+                        >
+                          {footer.preloaderEnabled !== false ? '● ACTIVE' : '○ DISABLED'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {footer.preloaderEnabled !== false && (
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-1">
+                        {/* Options Form panel */}
+                        <div className="lg:col-span-7 space-y-4">
+                          {/* Option 2: Preloader style */}
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-[#94A3B8] block">Select Preloader Animation Theme</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                              {[
+                                { id: 'cyber-core', name: 'Cybernetic Core', desc: 'glowing futuristic multi-ring rings' },
+                                { id: 'quantum-pulse', name: 'Quantum Pulse', desc: 'ambient soft glow with breathing logo' },
+                                { id: 'hacker-terminal', name: 'Hacker Terminal', desc: 'vintage neon shell logs compiling site' },
+                                { id: 'neon-shimmer', name: 'Neon Shimmer', desc: 'sleek horizontal loading progress glow' },
+                                { id: 'custom-logo-spin', name: '3D Custom Logo Spin', desc: 'perspective rotating logo card with orbits' }
+                              ].map((pOpt) => (
+                                <button
+                                  key={pOpt.id}
+                                  type="button"
+                                  onClick={() => setFooter({ ...footer, preloaderType: pOpt.id as any })}
+                                  className={`p-3 rounded-xl border text-left transition duration-250 select-none cursor-pointer ${
+                                    (footer.preloaderType || 'cyber-core') === pOpt.id
+                                      ? 'bg-[#06B6D4]/10 border-[#06B6D4] text-white shadow-[0_0_12px_rgba(6,182,212,0.12)]'
+                                      : 'bg-slate-900/50 border-white/5 text-[#94A3B8] hover:border-white/10 hover:text-white'
+                                  }`}
+                                >
+                                  <span className="text-xs font-bold block mb-0.5 text-white">{pOpt.name}</span>
+                                  <span className="text-[9px] text-[#64748B] block leading-tight">{pOpt.desc}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Option 3: Hold duration */}
+                          <div className="space-y-1.5 bg-white/[0.01] p-3 border border-white/5 rounded-xl">
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span className="text-[#94A3B8]">Loader Hold Duration Limit</span>
+                              <span className="text-[#06B6D4] font-mono font-bold">
+                                {footer.preloaderDuration ? (footer.preloaderDuration / 1000).toFixed(1) : '1.5'} seconds
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="500"
+                              max="5000"
+                              step="100"
+                              value={footer.preloaderDuration !== undefined ? footer.preloaderDuration : 1500}
+                              onChange={(e) => setFooter({ ...footer, preloaderDuration: Number(e.target.value) })}
+                              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#06B6D4]"
+                            />
+                          </div>
+
+                          {/* Option 4: Preloader logo */}
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-[#94A3B8] block">Upload Preloader Logo</label>
+                            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                              <div className="flex-1 bg-[#0F0F1A] border border-white/10 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 font-mono text-[10px] text-zinc-400 overflow-hidden truncate">
+                                {footer.preloaderLogoUrl ? (
+                                  <div className="flex items-center gap-2 max-w-full">
+                                    <img src={footer.preloaderLogoUrl} alt="Preloader Logo" className="w-6 h-6 object-contain rounded bg-white/5" referrerPolicy="no-referrer" />
+                                    <span className="text-[9px] text-[#94A3B8] truncate">{footer.preloaderLogoUrl.split('/').pop()}</span>
+                                  </div>
+                                ) : (
+                                  <span>Falls back to site logo or text initial monogram</span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <label className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[#06B6D4] text-[11px] font-semibold rounded-xl text-white cursor-pointer transition select-none">
+                                  <Upload size={13} className={preloaderLogoProgress ? 'animate-spin' : ''} />
+                                  {preloaderLogoProgress ? 'Uploading...' : 'Upload Logo'}
+                                  <input type="file" accept="image/*" onChange={handlePreloaderLogoUpload} className="hidden" />
+                                </label>
+                                {footer.preloaderLogoUrl && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFooter({ ...footer, preloaderLogoUrl: "" })}
+                                    className="px-2.5 py-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:text-white text-[11px] font-medium rounded-xl transition cursor-pointer"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Autofill triggers */}
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              <span className="text-[9px] text-[#64748B] flex items-center">Autofill:</span>
+                              {footer.headerLogoImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFooter({ ...footer, preloaderLogoUrl: footer.headerLogoImg })}
+                                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] text-[#94A3B8] hover:text-white transition cursor-pointer"
+                                >
+                                  Copy Header Logo
+                                </button>
+                              )}
+                              {footer.siteFavicon && (
+                                <button
+                                  type="button"
+                                  onClick={() => setFooter({ ...footer, preloaderLogoUrl: footer.siteFavicon })}
+                                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] text-[#94A3B8] hover:text-white transition cursor-pointer"
+                                >
+                                  Copy Web Favicon
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Live render preview container card */}
+                        <div className="lg:col-span-5 flex flex-col justify-between border border-white/5 rounded-2xl bg-black/40 p-4 font-sans text-center">
+                          <div className="text-left space-y-1">
+                            <span className="text-xs font-bold text-white block">Interactive Live Preview Panel</span>
+                            <p className="text-[10px] text-[#94A3B8] leading-tight">
+                              Live-render preview of the chosen style before committing settings.
+                            </p>
+                          </div>
+
+                          {/* Mini Sandbox Simulator viewport */}
+                          <div className="relative h-44 w-full border border-white/5 bg-[#05050C] rounded-xl overflow-hidden flex flex-col items-center justify-center p-3 mt-3">
+                            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#06B6D4]/30 to-transparent" />
+                            
+                            {/* Cyber Core */}
+                            {(footer.preloaderType || 'cyber-core') === 'cyber-core' && (
+                              <div className="flex flex-col items-center space-y-2.5 relative z-10 w-full">
+                                <div className="relative w-14 h-14 flex items-center justify-center">
+                                  <div className="absolute inset-0 rounded-full border border-dashed border-[#7C3AED]/30 animate-[spin_8s_linear_infinite]" />
+                                  <div className="absolute inset-1 rounded-full border-2 border-transparent border-t-[#06B6D4] border-b-[#7C3AED] animate-[spin_1.5s_linear_infinite]" />
+                                  <div className="absolute w-7 h-7 rounded-full bg-[#0D0D19] border border-white/10 flex items-center justify-center text-[7px] text-[#06B6D4] font-bold animate-pulse">
+                                    CPU
+                                  </div>
+                                </div>
+                                <span className="font-mono text-[7px] text-[#A78BFA] tracking-[0.2em] font-medium uppercase">ACTIVE DRIVE CORE</span>
+                              </div>
+                            )}
+
+                            {/* Quantum Pulse */}
+                            {(footer.preloaderType || 'cyber-core') === 'quantum-pulse' && (
+                              <div className="flex flex-col items-center space-y-2 relative z-10 text-center w-full">
+                                <div className="absolute w-24 h-24 rounded-full bg-[#7C3AED]/5 filter blur-lg animate-pulse" />
+                                <div className="relative bg-[#0F0F23] p-2 rounded-xl border border-white/10 shadow-[0_4px_15px_rgba(124,58,237,0.15)] flex items-center justify-center animate-pulse">
+                                  <Sparkles className="text-[#06B6D4]" size={14} />
+                                </div>
+                                <span className="font-mono text-[7px] text-[#06B6D4] tracking-widest uppercase mt-2">Quantum Stream</span>
+                              </div>
+                            )}
+
+                            {/* Hacker Terminal */}
+                            {(footer.preloaderType || 'cyber-core') === 'hacker-terminal' && (
+                              <div className="w-full max-w-[160px] bg-[#030307]/90 border border-emerald-500/20 rounded p-2 font-mono text-[6px] text-emerald-400 space-y-1 relative z-10 text-left">
+                                <div className="flex items-center justify-between border-b border-emerald-500/10 pb-0.5">
+                                  <span className="text-[5px] text-emerald-600 font-bold uppercase">DB_SYNC_INDEX</span>
+                                </div>
+                                <div className="space-y-0.5 leading-none text-emerald-300">
+                                  <div>&gt; mount diagnostic: ok</div>
+                                  <div>&gt; connecting API datastore: ok</div>
+                                  <div>&gt; render views: successful</div>
+                                  <span className="inline-block w-0.5 h-1.5 bg-emerald-450 animate-pulse" />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Neon Shimmer */}
+                            {(footer.preloaderType || 'cyber-core') === 'neon-shimmer' && (
+                              <div className="flex flex-col items-center space-y-2.5 relative z-10 w-full px-5">
+                                <div className="relative p-2 bg-[#0B0B14] rounded-full border border-white/10 flex items-center justify-center animate-spin">
+                                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-r-[#06B6D4] border-l-[#7C3AED]" />
+                                  <div className="w-4 h-4 bg-[#121226] rounded-full" />
+                                </div>
+                                <div className="w-full h-0.5 bg-white/5 rounded-full overflow-hidden relative">
+                                  <div className="absolute h-full left-0 bg-gradient-to-r from-[#7C3AED] to-[#06B6D4] w-2/3 animate-[pulse_1s_infinite]" />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Custom Logo Spin */}
+                            {(footer.preloaderType || 'cyber-core') === 'custom-logo-spin' && (
+                              <div className="flex flex-col items-center space-y-2 relative z-10 w-full">
+                                <div className="w-10 h-10 relative flex items-center justify-center animate-[bounce_2s_infinite]">
+                                  <div className="absolute inset-0 rounded-full bg-[#06B6D4]/10 filter blur" />
+                                  <div className="w-8 h-8 bg-[#0E0E1F] border border-white/10 rounded-xl flex items-center justify-center font-bold text-[7px] text-[#06B6D4]">
+                                    LOGO
+                                  </div>
+                                </div>
+                                <span className="text-[6px] text-[#A78BFA] uppercase tracking-widest font-mono">3D Spin Active</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => window.location.reload()}
+                            className="mt-3.5 w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-bold tracking-wider font-mono hover:text-[#06B6D4] uppercase rounded-xl transition cursor-pointer"
+                          >
+                            🔄 Test Live Site Reload
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-white/5">
+                  <button
+                    onClick={handleSaveFooter}
+                    className="px-6 py-2.5 bg-[#06B6D4] text-slate-900 rounded-xl text-xs font-bold hover:brightness-110 cursor-pointer transition-all shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                  >
+                    Save Interactive Cursor & effects Theme
                   </button>
                 </div>
               </div>

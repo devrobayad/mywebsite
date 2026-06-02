@@ -137,11 +137,37 @@ export default function ServicesTab({ services = [], setActiveTab, setPreSelecte
     }, 250);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 25 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      className="max-w-6xl mx-auto px-4 py-16"
+    >
       
       {/* Services Header */}
-      <div className="text-center mb-16 select-none">
+      <motion.div variants={itemVariants} className="text-center mb-16 select-none">
         
         {/* Upper badge tagline */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs sm:text-sm font-medium text-zinc-400 mb-4">
@@ -156,15 +182,18 @@ export default function ServicesTab({ services = [], setActiveTab, setPreSelecte
         <p className="text-[#94A3B8] max-w-xl mx-auto mt-4 text-sm sm:text-base font-normal leading-relaxed">
           Unlock high-performance products built with robust modern codebases, clean APIs, and responsive styling custom-fit for your scaling goals.
         </p>
-      </div>
+      </motion.div>
 
       {/* Grid structure */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch mb-16">
         {displayedServices.map((service) => {
           return (
-            <div
+            <motion.div
               key={service.id}
-              className="glass-card rounded-2xl overflow-hidden border border-white/5 flex flex-col group transition-all duration-300 hover:-translate-y-2 hover:border-[#7C3AED]/35 hover:shadow-[0_10px_35px_rgba(124,58,237,0.15)] h-full"
+              variants={itemVariants}
+              whileHover={{ y: -6, scale: 1.015 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="glass-card rounded-2xl overflow-hidden border border-white/5 flex flex-col group transition-all duration-300 hover:border-[#7C3AED]/35 hover:shadow-[0_10px_35px_rgba(124,58,237,0.15)] h-full"
             >
               {/* Card visual accent strip */}
               <div className={`h-1.5 w-full bg-gradient-to-r ${service.color || "from-[#7C3AED] to-[#06B6D4]"}`} />
@@ -187,7 +216,7 @@ export default function ServicesTab({ services = [], setActiveTab, setPreSelecte
                     <h3 className="text-xl font-bold text-white group-hover:text-[#06B6D4] transition-colors duration-250">
                       {service.title}
                     </h3>
-                    <p className="text-sm text-[#94A3B8] leading-relaxed">
+                    <p className="text-sm text-[#94A3B8] leading-relaxed font-normal">
                       {service.desc}
                     </p>
                   </div>
@@ -209,33 +238,33 @@ export default function ServicesTab({ services = [], setActiveTab, setPreSelecte
                 {/* Interactive Consultation Target Trigger */}
                 <button
                   onClick={() => handleHireClick(service)}
-                  className="w-full py-3 bg-white/3 hover:bg-white/10 text-white rounded-xl text-xs sm:text-sm font-semibold border border-white/10 flex items-center justify-center gap-2 group/btn transition"
+                  className="w-full py-3 bg-white/3 hover:bg-white/10 text-white rounded-xl text-xs sm:text-sm font-semibold border border-white/10 flex items-center justify-center gap-2 group/btn transition cursor-pointer"
                 >
                   <span>Book Consultation</span>
                   <ArrowRight size={14} className="text-zinc-400 transition-transform duration-250 group-hover/btn:translate-x-1" />
                 </button>
 
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       {/* Slicing More Button */}
       {hasMore && onViewAll && (
-        <div className="mt-4 mb-16 text-center select-none">
+        <motion.div variants={itemVariants} className="mt-4 mb-16 text-center select-none">
           <button
             onClick={onViewAll}
-            className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#7C3AED]/15 to-[#06B6D4]/15 border border-[#06B6D4]/50 hover:border-[#06B6D4] text-[#06B6D4] hover:text-[#EC4899] font-bold rounded-xl text-xs sm:text-sm shadow-xl transition-all duration-300 transform hover:scale-[1.03]"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#7C3AED]/15 to-[#06B6D4]/15 border border-[#06B6D4]/50 hover:border-[#06B6D4] text-[#06B6D4] hover:text-[#EC4899] font-bold rounded-xl text-xs sm:text-sm shadow-xl transition-all duration-300 transform hover:scale-[1.03] cursor-pointer"
           >
             <span>More Services</span>
             <ArrowRight size={15} />
           </button>
-        </div>
+        </motion.div>
       )}
 
       {/* Prominent Call to Action banner at the bottom */}
-      <div className="relative glass-card border border-white/10 rounded-2xl p-8 sm:p-12 overflow-hidden text-center max-w-4xl mx-auto shadow-2xl">
+      <motion.div variants={itemVariants} className="relative glass-card border border-white/10 rounded-2xl p-8 sm:p-12 overflow-hidden text-center max-w-4xl mx-auto shadow-2xl">
         <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#7C3AED]/10 blur-3xl rounded-full" />
         <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-[#06B6D4]/10 blur-3xl rounded-full" />
 
@@ -253,15 +282,15 @@ export default function ServicesTab({ services = [], setActiveTab, setPreSelecte
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }, 200);
               }}
-              className="px-8 py-3.5 bg-gradient-to-r from-[#7C3AED] via-[#06B6D4] to-[#EC4899] text-white brightness-105 hover:brightness-115 font-bold rounded-xl text-xs sm:text-sm shadow-xl flex items-center gap-2"
+              className="px-8 py-3.5 bg-gradient-to-r from-[#7C3AED] via-[#06B6D4] to-[#EC4899] text-white brightness-105 hover:brightness-115 font-bold rounded-xl text-xs sm:text-sm shadow-xl flex items-center gap-2 cursor-pointer"
             >
               Send Me An Inquiry
               <ArrowRight size={15} />
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-    </div>
+    </motion.div>
   );
 }

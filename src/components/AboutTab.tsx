@@ -2,6 +2,7 @@ import React from 'react';
 import { Download, Sparkles, ShieldCheck, Mail, Info } from 'lucide-react';
 import { AboutData, SocialLinks } from '../types';
 import IconRenderer from './IconRenderer';
+import { motion } from 'motion/react';
 
 interface AboutTabProps {
   about: AboutData | null;
@@ -41,14 +42,43 @@ export default function AboutTab({ about, social }: AboutTabProps) {
         { title: "Learning", desc: "Constantly researching the cutting edge of web frameworks, AI APIs, and developer tools.", icon: "BookOpen" }
       ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-16">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-100px" }}
+      className="max-w-6xl mx-auto px-4 py-16"
+    >
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
         
         {/* Left Column: Premium Developer Portrait */}
         {!isPhotoRemoved && (
-          <div className="col-span-1 lg:col-span-12 xl:col-span-5 flex flex-col items-center w-full">
+          <motion.div 
+            variants={itemVariants}
+            className="col-span-1 lg:col-span-12 xl:col-span-5 flex flex-col items-center w-full"
+          >
             
             {bioPhotoFrame === 'circle-premium' && (
               <div 
@@ -141,11 +171,14 @@ export default function AboutTab({ about, social }: AboutTabProps) {
                 </div>
               </div>
             )}
-          </div>
+          </motion.div>
         )}
 
         {/* Right Column: Biography, Heading, Category & Styled Pill Capsules */}
-        <div className={`space-y-6 text-left ${isPhotoRemoved ? 'col-span-1 lg:col-span-12 max-w-4xl mx-auto' : 'col-span-1 lg:col-span-12 xl:col-span-7'}`}>
+        <motion.div 
+          variants={itemVariants}
+          className={`space-y-6 text-left ${isPhotoRemoved ? 'col-span-1 lg:col-span-12 max-w-4xl mx-auto' : 'col-span-1 lg:col-span-12 xl:col-span-7'}`}
+        >
           
           {/* Eyebrow Label */}
           <span className="text-[#06B6D4] text-xs sm:text-sm font-bold tracking-[0.25em] font-mono uppercase block">
@@ -194,20 +227,25 @@ export default function AboutTab({ about, social }: AboutTabProps) {
             </button>
           </div>
 
-        </div>
+        </motion.div>
 
       </div>
 
       {/* Focus Highlight cards - Methodological Pillars */}
-      <div className="mt-24 border-t border-white/5 pt-16">
+      <motion.div 
+        variants={itemVariants}
+        className="mt-24 border-t border-white/5 pt-16"
+      >
         <h3 className="text-xl sm:text-2xl font-bold text-white text-center mb-10">
           {about?.methodologyTitle || "Core Pillars of my Methodology"}
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {highlightCards.map((card, idx) => (
-            <div 
+            <motion.div 
               key={idx}
+              whileHover={{ y: -6, scale: 1.02 }}
+              transition={{ duration: 0.2 }}
               className="glass-card glass-card-hover p-6 rounded-2xl border border-white/5 group relative overflow-hidden"
             >
               {/* Corner ambient shine */}
@@ -219,11 +257,11 @@ export default function AboutTab({ about, social }: AboutTabProps) {
 
               <h4 className="text-lg font-bold text-white mb-2">{card.title}</h4>
               <p className="text-sm text-[#94A3B8] leading-relaxed font-normal">{card.desc}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
-    </div>
+    </motion.div>
   );
 }

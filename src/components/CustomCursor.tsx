@@ -11,13 +11,13 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
 
-  // Keep track of current mouse position and target positions
-  const mouseCoords = useRef({ x: 0, y: 0 });
-  const ringCoords = useRef({ x: 0, y: 0 });
+  const mouseCoords = useRef({ x: -100, y: -100 });
+  const ringCoords = useRef({ x: -100, y: -100 });
 
   useEffect(() => {
     if (styleType === 'system') {
       document.documentElement.classList.remove('custom-cursor-active');
+      setIsVisible(false);
       return;
     }
 
@@ -27,7 +27,9 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
     const handleMouseMove = (e: MouseEvent) => {
       mouseCoords.current.x = e.clientX;
       mouseCoords.current.y = e.clientY;
-      if (!isVisible) setIsVisible(true);
+      if (!isVisible) {
+        setIsVisible(true);
+      }
     };
 
     const handleMouseLeave = () => {
@@ -78,15 +80,19 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
       const ring = ringRef.current;
 
       if (dot) {
-        // Dot moves instantly with the mouse
         dot.style.transform = `translate3d(${mouseCoords.current.x}px, ${mouseCoords.current.y}px, 0) translate3d(-50%, -50%, 0)`;
       }
 
       if (ring) {
-        // Outer ring smoothly interpolates with ease-out inertia
-        const ease = styleType === 'retro' ? 0.4 : 0.15; // retro reacts tighter
-        ringCoords.current.x += (mouseCoords.current.x - ringCoords.current.x) * ease;
-        ringCoords.current.y += (mouseCoords.current.y - ringCoords.current.y) * ease;
+        const ease = styleType === 'retro' ? 0.4 : 0.15;
+        // Seed initial position if it's the first render block
+        if (ringCoords.current.x === -100) {
+          ringCoords.current.x = mouseCoords.current.x;
+          ringCoords.current.y = mouseCoords.current.y;
+        } else {
+          ringCoords.current.x += (mouseCoords.current.x - ringCoords.current.x) * ease;
+          ringCoords.current.y += (mouseCoords.current.y - ringCoords.current.y) * ease;
+        }
 
         ring.style.transform = `translate3d(${ringCoords.current.x}px, ${ringCoords.current.y}px, 0) translate3d(-50%, -50%, 0)`;
       }
@@ -106,20 +112,23 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
       cancelAnimationFrame(animationFrameId);
       document.documentElement.classList.remove('custom-cursor-active');
     };
-  }, [styleType, isVisible]);
+  }, [styleType]);
 
-  if (styleType === 'system' || !isVisible) {
+  if (styleType === 'system') {
     return null;
   }
 
   // Neon Cursor Layout
   if (styleType === 'neon') {
     return (
-      <div className="hidden md:block pointer-events-none fixed inset-0 z-[999999]">
+      <div 
+        className="hidden md:block pointer-events-none fixed inset-0 z-[999999] transition-opacity duration-300"
+        style={{ opacity: isVisible ? 1 : 0 }}
+      >
         {/* Glow outer ring */}
         <div
           ref={ringRef}
-          className="fixed top-0 left-0 w-8 h-8 rounded-full border border-[#06B6D4] opacity-50 bg-cyan-500/10 transition-all duration-150 ease-out flex items-center justify-center pointer-events-none"
+          className="fixed top-0 left-0 w-8 h-8 rounded-full border border-[#06B6D4] bg-cyan-500/10 pointer-events-none flex items-center justify-center transition-[width,height,border-color,box-shadow] duration-150 ease-out"
           style={{
             transform: 'translate3d(-100px, -100px, 0)',
             width: isHovered ? '48px' : isClicked ? '24px' : '32px',
@@ -131,7 +140,7 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
         {/* Core center micro dot */}
         <div
           ref={dotRef}
-          className="fixed top-0 left-0 w-2 h-2 rounded-full pointer-events-none"
+          className="fixed top-0 left-0 w-2 h-2 rounded-full pointer-events-none transition-[background-color,box-shadow] duration-150"
           style={{
             transform: 'translate3d(-100px, -100px, 0)',
             backgroundColor: isHovered ? '#EC4899' : '#0284C7',
@@ -145,11 +154,14 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
   // Magnetic Dot Loop
   if (styleType === 'magnetic') {
     return (
-      <div className="hidden md:block pointer-events-none fixed inset-0 z-[999999]">
+      <div 
+        className="hidden md:block pointer-events-none fixed inset-0 z-[999999] transition-opacity duration-300"
+        style={{ opacity: isVisible ? 1 : 0 }}
+      >
         {/* Elegant soft circle wrapper trailing */}
         <div
           ref={ringRef}
-          className="fixed top-0 left-0 rounded-full border-2 border-white/30 pointer-events-none transition-all duration-200 ease-out"
+          className="fixed top-0 left-0 rounded-full border-2 border-white/30 pointer-events-none flex items-center justify-center transition-[width,height,background-color,border-color] duration-200 ease-out"
           style={{
             transform: 'translate3d(-100px, -100px, 0)',
             width: isHovered ? '56px' : isClicked ? '20px' : '40px',
@@ -173,7 +185,10 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
   // Retro Command Terminal Pulse Block
   if (styleType === 'retro') {
     return (
-      <div className="hidden md:block pointer-events-none fixed inset-0 z-[999999]">
+      <div 
+        className="hidden md:block pointer-events-none fixed inset-0 z-[999999] transition-opacity duration-300"
+        style={{ opacity: isVisible ? 1 : 0 }}
+      >
         {/* Outlined hacker bracket wrapper */}
         <div
           ref={ringRef}
@@ -187,7 +202,7 @@ export default function CustomCursor({ styleType = 'system' }: CustomCursorProps
         {/* Core blinking green cursor block */}
         <div
           ref={dotRef}
-          className="fixed top-0 left-0 bg-[#22C55E]/80 animate-pulse pointer-events-none"
+          className="fixed top-0 left-0 bg-[#22C55E]/80 animate-pulse pointer-events-none transition-[width,height,box-shadow] duration-100"
           style={{
             width: isHovered ? '12px' : '6px',
             height: isHovered ? '12px' : '6px',
